@@ -1,0 +1,1263 @@
+---
+title: "Weekly Report - 1월 4주차"
+author: "SeriseON - GMT"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    fig_height: 6
+    fig_width: 10
+    highlight: textmate
+    theme: flatly
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    fig_height: 6
+    fig_width: 10
+    toc: no
+  word_document:
+    fig_height: 6
+    fig_width: 9
+    toc: no
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message = FALSE)
+
+library(data.table)
+library(dplyr)
+library(reshape2)
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+library(readxl)
+library(plotly)
+library(highcharter)
+library(DT)
+library(forecast)
+library(rmarkdown)
+library(htmlwidgets)
+library(lubridate)
+library(itunesr)
+library(formattable)
+
+```
+
+
+
+```{r}
+#원본 데이터 가공
+original <- read_excel("C:/Users/USER/Desktop/KPI/rawdata.xlsx", sheet = "daily")
+original_week <- read_excel("C:/Users/USER/Desktop/KPI/rawdata.xlsx", sheet = "week")
+original_target <- read_excel("C:/Users/USER/Desktop/KPI/rawdata.xlsx", sheet = "target")
+original_week_pu <- read_excel("C:/Users/USER/Desktop/KPI/rawdata.xlsx", sheet = "weekly_pu")
+
+
+original_target$month <- as.factor(original_target$month)
+original$date <- as.Date(original$date)
+original$day <- as.factor(original$day)
+original$day <- factor(original$day, levels = c("월", "화", "수", "목", "금", "토", "일"))
+original$dailyreport_day <- original$day
+
+#그래프 이번주/ 다음주 표시 **CHANGE**
+이번주 <- "1월 넷째주"
+저번주 <- "1월 셋째주"
+영화 <- "1월 넷째주 영화"
+방송 <- "1월 넷째주 방송"
+this <- "1/20주"
+last <- "1/13주"
+
+#날짜 x축 바꿔주기 *CHANGE*
+levels(original$dailyreport_day) <- c("1/20(월)", "1/21(화)", "1/22(수)", "1/23(목)",
+                                              "1/24(금)", "1/25(토)", "1/26(일)")
+
+#날짜 x축 바꿔주기 *CHANGE*
+day_mean <- c("1/20(월)", "1/21(화)", "1/22(수)", "1/23(목)",
+                                              "1/24(금)", "1/25(토)", "1/26(일)")
+
+#daily 저장소 생성 *CHANGE*
+original_2019 <- original %>% filter(year == "2019")
+original_2020 <- original %>% filter(year == "2020")
+
+
+#week_daily 저장소 생성 *CHANGE*
+this_daily <- original %>% filter(week == this)
+last_daily <- original %>% filter(week == last)
+
+
+#week 저장소 생성 *CHANGE*
+original_week_2019 <- original_week %>% filter(year == 2019)
+week_pu_2019 <- original_week_pu %>% filter(year == 2019)
+original_week_2020 <- original_week %>% filter(year == 2020)
+week_pu_2020 <- original_week_pu %>% filter(year == 2020 | week == "12/30주")
+this_week <- original_week %>% filter(week == this)
+last_week <- original_week %>% filter(week == last)
+
+
+#요일 바르기
+monday <- original %>% filter(day == "월", year == "2019")
+movieper_1 <- mean(monday$movie_per, na.rm = TRUE)
+broadper_1 <- mean(monday$broad_per, na.rm = TRUE)
+movie_1 <- mean(monday$movie_sales, na.rm = TRUE)
+broad_1 <- mean(monday$broad_sales, na.rm = TRUE)
+arppu_1 <- mean(monday$arppu, na.rm = TRUE)
+
+
+tuesday <- original %>% filter(day == "화", year == "2019")
+movie_2 <- mean(tuesday$movie_sales, na.rm = TRUE)
+broad_2 <- mean(tuesday$broad_sales, na.rm = TRUE)
+movieper_2 <- mean(tuesday$movie_per, na.rm = TRUE)
+broadper_2 <- mean(tuesday$broad_per, na.rm = TRUE)
+arppu_2 <- mean(tuesday$arppu, na.rm = TRUE)
+
+
+wednesday <- original %>% filter(day == "수", year == "2019")
+movie_3 <- mean(wednesday$movie_sales, na.rm = TRUE)
+broad_3 <- mean(wednesday$broad_sales, na.rm = TRUE)
+movieper_3 <- mean(wednesday$movie_per, na.rm = TRUE)
+broadper_3 <- mean(wednesday$broad_per, na.rm = TRUE)
+arppu_3 <- mean(wednesday$arppu, na.rm = TRUE)
+
+thursday <- original %>% filter(day == "목", year == "2019")
+movie_4 <- mean(thursday$movie_sales, na.rm = TRUE)
+broad_4 <- mean(thursday$broad_sales, na.rm = TRUE)
+movieper_4 <- mean(thursday$movie_per, na.rm = TRUE)
+broadper_4 <- mean(thursday$broad_per, na.rm = TRUE)
+arppu_4 <- mean(thursday$arppu, na.rm = TRUE)
+
+
+friday <- original %>% filter(day == "금", year == "2019")
+movie_5 <- mean(friday$movie_sales, na.rm = TRUE)
+broad_5 <- mean(friday$broad_sales, na.rm = TRUE)
+movieper_5 <- mean(friday$movie_per, na.rm = TRUE)
+broadper_5 <- mean(friday$broad_per, na.rm = TRUE)
+arppu_5 <- mean(friday$arppu, na.rm = TRUE)
+
+
+saturday <- original %>% filter(day == "토", year == "2019")
+movie_6 <- mean(saturday$movie_sales, na.rm = TRUE)
+broad_6 <- mean(saturday$broad_sales, na.rm = TRUE)
+movieper_6 <- mean(saturday$movie_per, na.rm = TRUE)
+broadper_6 <- mean(saturday$broad_per, na.rm = TRUE)
+arppu_6 <- mean(saturday$arppu, na.rm = TRUE)
+
+
+sunday <- original %>% filter(day == "일", year == "2019")
+movie_7 <- mean(sunday$movie_sales, na.rm = TRUE)
+broad_7 <- mean(sunday$broad_sales, na.rm = TRUE)
+movieper_7 <- mean(sunday$movie_per, na.rm = TRUE)
+broadper_7 <- mean(sunday$broad_per, na.rm = TRUE)
+arppu_7 <- mean(sunday$arppu, na.rm = TRUE)
+
+
+#영화/방송/arppu 평균 집계
+movie_mean <- c(movie_1, movie_2, movie_3, movie_4, movie_5, movie_6, movie_7)
+broad_mean <- c(broad_1, broad_2, broad_3, broad_4, broad_5, broad_6, broad_7)
+arppu_mean <- c(arppu_1, arppu_2, arppu_3, arppu_4, arppu_5, arppu_6, arppu_7)
+
+movie_per_mean <- c(movieper_1, movieper_2, movieper_3, movieper_4, movieper_5, movieper_6, movieper_7)
+broad_per_mean <- c(broadper_1, broadper_2, broadper_3, broadper_4, broadper_5, broadper_6, broadper_7)
+
+mean <- data.table(movie_mean, broad_mean, day_mean)
+mean2 <- data.table(movie_per_mean, broad_per_mean, day_mean)
+mean3 <- data.table(arppu_mean, day_mean)
+mean[,1:2] <- round(mean[,1:2],2)
+mean2[,1:2] <- round(mean2[,1:2],2)
+mean3[,1] <- round(mean3[,1],2)
+
+
+#2020년 영화/방송 비율 구하기
+this_year <- original_target %>% filter(year == 2020)
+this_year <- this_year[-13,]
+
+this_year$month <- as.character(this_year$month)
+this_year_per <- c(mean(this_year$movie_per), mean(this_year$broad_per))
+this_year_per2 <- c("영화", "방송")
+this_year_per <- data.table(this_year_per, this_year_per2)
+this_year_per<- this_year_per %>% rename("category" = "this_year_per2", "per" = "this_year_per")
+
+
+#영화 한주 작품 판매량
+mcon_w <- read_excel("C:/Users/USER/Desktop/KPI/rawdata.xlsx", sheet = "week_mcon")
+mcon_w <- mcon_w %>% filter(week == this)
+mcon_w$컨텐츠 <- as.factor(mcon_w$컨텐츠)
+mcon_w <- arrange(mcon_w, desc(실매출액))
+mcon_w <- head(mcon_w, 10)
+
+
+#방송 한주 작품 판매량
+bcon_w <- read_excel("C:/Users/USER/Desktop/KPI/rawdata.xlsx", sheet = "week_bcon")
+bcon_w <- bcon_w %>% filter(week == this)
+bcon_w$컨텐츠 <- as.factor(bcon_w$컨텐츠)
+bcon_w <- arrange(bcon_w, desc(실매출액))
+bcon_w <- head(bcon_w, 10)
+
+
+
+#2019년 저장소 생성 
+last_year <- original_target %>% filter(year == 2019)
+last_year <- last_year[-13,]
+this_year_per$per<- round(this_year_per$per,1)
+
+
+#2020년 1월 저장소 생성 **CHANGE**
+month_2020 <- this_year %>% filter(month == "1월")
+month_2019 <- last_year %>% filter(month == "1월")
+month_2020$month <- as.factor(month_2020$month)
+
+#2020년 연간 비교 저장소 생성 **CHANGE**
+result_2020 <- original_target %>% filter(year == "2020" & month == "달성")
+
+
+#2020 달성현황 **CHANGE**
+a <- round(result_2020$sales / result_2020$total_base*100,1)
+
+
+#2019 플랫폼별 비교
+original_week_2019$mb_pc <- original_week_2019$movie_pc_sales + original_week_2019$broad_pc_sales
+original_week_2019$mb_mw <- original_week_2019$movie_m_sales + original_week_2019$broad_m_sales
+original_week_2019$mb_aos <- original_week_2019$movie_aos_sales + original_week_2019$broad_aos_sales
+original_week_2019$mb_ios <- original_week_2019$movie_ios_sales + original_week_2019$broad_ios_sales
+original_week_2019$mb_pc_cnt <- original_week_2019$movie_pc_cnt + original_week_2019$broad_pc_cnt
+original_week_2019$mb_mw_cnt <- original_week_2019$movie_m_cnt + original_week_2019$broad_m_cnt
+original_week_2019$mb_aos_cnt <- original_week_2019$movie_aos_cnt + original_week_2019$broad_aos_cnt
+original_week_2019$mb_ios_cnt <- original_week_2019$movie_ios_cnt + original_week_2019$broad_ios_cnt
+
+#2020 플랫폼별 비교
+original_week_2020$mb_pc <- original_week_2020$movie_pc_sales + original_week_2020$broad_pc_sales
+original_week_2020$mb_mw <- original_week_2020$movie_m_sales + original_week_2020$broad_m_sales
+original_week_2020$mb_aos <- original_week_2020$movie_aos_sales + original_week_2020$broad_aos_sales
+original_week_2020$mb_ios <- original_week_2020$movie_ios_sales + original_week_2020$broad_ios_sales
+original_week_2020$mb_pc_cnt <- original_week_2020$movie_pc_cnt + original_week_2020$broad_pc_cnt
+original_week_2020$mb_mw_cnt <- original_week_2020$movie_m_cnt + original_week_2020$broad_m_cnt
+original_week_2020$mb_aos_cnt <- original_week_2020$movie_aos_cnt + original_week_2020$broad_aos_cnt
+original_week_2020$mb_ios_cnt <- original_week_2020$movie_ios_cnt + original_week_2020$broad_ios_cnt
+
+
+#-------------NDSAPP-----------------------------------------------------------------------------------------------
+
+#ios demo 정보
+ios_demo <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "ios_demo_week")
+ios_demo$연령그룹 <- as.factor(ios_demo$연령그룹)
+ios_demo_x <- unique(ios_demo$연령그룹)
+ios_demo_1 <- ios_demo %>% filter(gender == "여성", week == this)
+ios_demo_2 <- ios_demo %>% filter(gender == "남성", week == this)
+
+#aos demo 정보
+aos_demo <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "aos_demo_week")
+aos_demo$연령그룹 <- as.factor(aos_demo$연령그룹)
+aos_demo_x <- unique(aos_demo$연령그룹)
+aos_demo_1 <- ios_demo %>% filter(gender == "여성", week == this)
+aos_demo_2 <- ios_demo %>% filter(gender == "남성", week == this)
+
+
+#PC웹 데일리 저장소
+pcw_daily <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "pcw_main_daily")
+pcw_daily <- pcw_daily %>% select(-`서비스 트리`)
+pcw_daily$구분[is.na(pcw_daily$구분)] <- "전체"
+pcw_daily <- pcw_daily[!(pcw_daily$구분 == "서비스 이용 안내"),]
+pcw_daily <- pcw_daily[!(pcw_daily$구분 == "주문 및 결제"),]
+pcw_daily$date <- ymd(pcw_daily$date)
+
+#MW데일리 저장소
+mw_daily <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "mw_main_daily")
+mw_daily <- mw_daily %>% select(-`서비스 트리`)
+mw_daily$구분[is.na(mw_daily$구분)] <- "전체"
+mw_daily <- mw_daily[!(mw_daily$구분 == "성인 인증"),]
+mw_daily <- mw_daily[!(mw_daily$구분 == "구매하기"),]
+mw_daily$date <- ymd(mw_daily$date)
+
+
+#IOS 데일리 저장소
+ios_daily <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "ios_daily")
+ios_daily <- ios_daily %>% mutate(mean_new = round(mean(ios_daily$신규),1))
+ios_daily <- ios_daily %>% mutate(mean_all = round(mean(ios_daily$전체),1))
+
+#AOS 데일리 저장소
+aos_daily <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "aos_daily")
+aos_daily <- aos_daily %>% mutate(mean_new = round(mean(aos_daily$신규),1))
+aos_daily <- aos_daily %>% mutate(mean_all = round(mean(aos_daily$전체),1))
+
+#PC 웹 위클리 저장소
+pcw_week <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "pcw_main_week")
+pcw_week <- pcw_week %>% select(-`서비스 트리`)
+pcw_week$구분[is.na(pcw_week$구분)] <- "전체"
+pcw_week <- pcw_week[!(pcw_week$구분 == "서비스 이용 안내"),]
+pcw_week <- pcw_week[!(pcw_week$구분 == "주문 및 결제"),]
+pcw_week$date <- ymd(pcw_week$date)
+
+#MW 위클리 저장소
+mw_week <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "mw_main_week")
+mw_week <- mw_week %>% select(-`서비스 트리`)
+mw_week$구분[is.na(mw_week$구분)] <- "전체"
+mw_week <- mw_week[!(mw_week$구분 == "성인 인증"),]
+mw_week <- mw_week[!(mw_week$구분 == "구매하기"),]
+mw_week$date <- ymd(mw_week$date)
+
+#IOS 위클리 저장소
+ios_week <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "ios_week")
+ios_week <- ios_week %>% mutate(mean_new = round(mean(ios_week$신규),1))
+ios_week <- ios_week %>% mutate(mean_all = round(mean(ios_week$전체),1))
+
+#AOS 위클리 저장소
+aos_week <- read_excel("C:/Users/USER/Desktop/KPI/rawdata_nds.xlsx", sheet = "aos_week")
+aos_week <- aos_week %>% mutate(mean_new = round(mean(aos_week$신규),1))
+aos_week <- aos_week %>% mutate(mean_all = round(mean(aos_week$전체),1))
+
+#PC웹 데일리 전체
+pcw_daily_all <- pcw_daily %>% filter(구분 == "전체")
+pcw_daily_all <- pcw_daily_all %>% mutate(mean_PV = round(mean(pcw_daily_all$PV),1))
+pcw_daily_all <- pcw_daily_all %>% mutate(mean_UB = round(mean(pcw_daily_all$UB),1))
+pcw_daily_this <- pcw_daily_all %>% filter(week == this)
+
+#PC웹 위클리 전체
+pcw_week_all <- pcw_week %>% filter(구분 == "전체")
+pcw_week_this <- pcw_week_all %>% filter(week == this)
+pcw_week_last <- pcw_week_all %>% filter(week == last)
+
+#MW 데일리 전체
+mw_daily_all <- mw_daily %>% filter(구분 == "전체")
+mw_daily_all <- mw_daily_all %>% mutate(mean_PV = round(mean(mw_daily_all$PV),1))
+mw_daily_all <- mw_daily_all %>% mutate(mean_UB = round(mean(mw_daily_all$UB),1))
+mw_daily_this <- mw_daily_all %>% filter(week == this)
+
+#MW 위클리 전체
+mw_week_all <- mw_week %>% filter(구분 == "전체")
+mw_week_this <- mw_week_all %>% filter(week == this)
+mw_week_last <- mw_week_all %>% filter(week == last)
+
+#IOS/aos 데일리 이번주
+ios_daily_this <- ios_daily %>% filter(week == this)
+aos_daily_this <- aos_daily %>% filter(week == this)
+
+#IOS/AOS 위클리 이번주, 저번주
+ios_week_this <- ios_week %>% filter(week == this)
+ios_week_last <- ios_week %>% filter(week == last)
+aos_week_this <- aos_week %>% filter(week == this)
+aos_week_last <- aos_week %>% filter(week == last)
+
+
+
+
+
+#-------------APPANNIE-----------------------------------------------------------------------------------------------
+
+
+#원본 데이터 가공 - 필요없는 열 모두 제거
+annie <- read_excel("C:/Users/USER/Desktop/KPI/rawdata.xlsx", sheet = "app_annie")
+
+
+#필요 컬럼만 호출
+annie <- annie %>% select(`Unified App Name`, `Start Date`, Downloads, `Usage Penetration`,
+                                `Active Users`, `Install Penetration`, `Install Base`, `Open Rate`, `Retention D1`,
+                                `Retention D7`, `Retention D30`)
+
+
+#변수명 변경
+annie <- rename(annie, name = `Unified App Name`, date = `Start Date`, openrate = `Open Rate`,
+                active = `Active Users`, install = `Install Penetration`)
+annie$openrate <- round(annie$openrate*100,1)
+annie$install <- round(annie$install * 100, 1)
+
+#날짜 데이터 가공
+annie$date <- ymd(annie$date)
+annie$year <- year(annie$date)
+annie$month <- month(annie$date)
+annie$name <- as.factor(annie$name)
+
+a <- annie %>% filter(name == "wavve")
+b <- annie %>% filter(name == "pooq")
+c <- annie %>% filter(name == "SERIES ON")
+d <- annie %>% filter(name == "tving")
+e <- annie %>% filter(name == "Watcha Play")
+
+a$Downloads <- a$Downloads + b$Downloads
+a$`Usage Penetration` <- (a$`Usage Penetration` + b$`Usage Penetration`)/2
+a$active <- a$active + b$active
+a$install <- (a$install + b$install)/2
+a$`Install Base` <- a$`Install Base` + b$`Install Base`
+a$openrate <- (a$openrate + b$openrate)/2
+a$`Retention D1` <- (a$`Retention D1`+b$`Retention D1`)/2
+a$`Retention D7` <- (a$`Retention D7`+b$`Retention D7`)/2
+a$`Retention D30` <- (a$`Retention D30`+b$`Retention D30`)/2
+
+annie <- rbind(a,c,d,e)
+
+#연간 구분 저장소
+ori_2020 <- annie %>% filter(year == 2020)
+ori_2019 <- annie %>% filter(year == 2019)
+
+
+#20년 1월 다운로드 저장소 **CHANGE**
+down_202001 <- ori_2020 %>% select(name, date, month, Downloads) %>% filter(month == "1")
+down_202001 <- down_202001 %>% select(-month)
+
+down_202001 <- dcast(down_202001, date~name, value.var = "Downloads")
+
+
+#20년 1월 오픈율 저장소 **CHANGE**
+open_202001 <- ori_2020 %>% select(name, date, month, openrate) %>% filter(month == "1")
+open_202001 <- open_202001 %>% select(-month)
+open_202001 <- dcast(open_202001, date~name)
+
+#19년 다운로드 저장소 생성 
+down_2019 <- ori_2019 %>% select(name, date, month, Downloads)
+
+#19년 오픈율 저장소 생성
+open_2019 <- ori_2019 %>% select(name, date, month, openrate)
+
+#19년 Active user 저장소 생성
+active_2019 <- ori_2019 %>% select(name, date, month, active)
+
+#19년 Install per 저장소 생성 
+install_2019 <- ori_2019 %>% select(name, date, month, install)
+
+
+
+#19년 월별 경쟁사 다운로드 저장소 
+down_2019_son <- down_2019 %>% filter(name == "SERIES ON")
+down_2019_son <- down_2019_son %>% group_by(month) %>% summarise(Downloads = sum(Downloads))
+down_2019_tv <- down_2019 %>% filter(name == "tving")
+down_2019_tv <- down_2019_tv %>% group_by(month) %>% summarise(Downloads = sum(Downloads))
+down_2019_wat <- down_2019 %>% filter(name == "Watcha Play")
+down_2019_wat <- down_2019_wat %>% group_by(month) %>% summarise(Downloads = sum(Downloads))
+down_2019_wav <- down_2019 %>% filter(name == "wavve")
+down_2019_wav <- down_2019_wav %>% group_by(month) %>% summarise(Downloads = sum(Downloads))
+
+
+#19년 월별 경쟁사 오픈율 저장소
+open_2019_son <- open_2019 %>% filter(name == "SERIES ON")
+open_2019_son <- open_2019_son %>% group_by(month) %>% summarise(open = round(mean(openrate),1))
+open_2019_tv <- open_2019 %>% filter(name == "tving")
+open_2019_tv <- open_2019_tv %>% group_by(month) %>% summarise(open = round(mean(openrate),1))
+open_2019_wat <- open_2019 %>% filter(name == "Watcha Play")
+open_2019_wat <- open_2019_wat %>% group_by(month) %>% summarise(open = round(mean(openrate),1))
+open_2019_wav <- open_2019 %>% filter(name == "wavve")
+open_2019_wav <- open_2019_wav %>% group_by(month) %>% summarise(open = round(mean(openrate),1))
+
+#19년 월별 경쟁사 ACTIVE 저장소 
+active_2019_son <- active_2019 %>% filter(name == "SERIES ON")
+active_2019_son <- active_2019_son %>% group_by(month) %>% summarise(active = round(mean(active),1))
+active_2019_tv <- active_2019 %>% filter(name == "tving")
+active_2019_tv <- active_2019_tv %>% group_by(month) %>% summarise(active = round(mean(active),1))
+active_2019_wat <- active_2019 %>% filter(name == "Watcha Play")
+active_2019_wat <- active_2019_wat %>% group_by(month) %>% summarise(active = round(mean(active),1))
+active_2019_wav <- active_2019 %>% filter(name == "wavve")
+active_2019_wav <- active_2019_wav %>% group_by(month) %>% summarise(active = round(mean(active),1))
+
+
+#19년 월별 경쟁사 설치율 저장소
+install_2019_son <- install_2019 %>% filter(name == "SERIES ON")
+install_2019_son <- install_2019_son %>% group_by(month) %>% summarise(install = round(mean(install),1))
+install_2019_tv <- install_2019 %>% filter(name == "tving")
+install_2019_tv <- install_2019_tv %>% group_by(month) %>% summarise(install = round(mean(install),1))
+install_2019_wat <- install_2019 %>% filter(name == "Watcha Play")
+install_2019_wat <- install_2019_wat %>% group_by(month) %>% summarise(install = round(mean(install),1))
+install_2019_wav <- install_2019 %>% filter(name == "wavve")
+install_2019_wav <- install_2019_wav %>% group_by(month) %>% summarise(install = round(mean(install),1))
+
+# 총 2019년도 다운로드 숫자 저장소
+
+down_2019 <- down_2019 %>% group_by(name) %>% summarise(sum = sum(Downloads))
+down_2019_allson <- down_2019[1,]
+down_2019_alltv <- down_2019[2,]
+down_2019_allwat <- down_2019[3,]
+down_2019_allwav <- down_2019[4,]
+
+
+```
+
+
+
+```{r}
+#2020 1월 달성 현황 **CHANGE**
+b <- round(month_2020$sales / month_2020$total_base*100,1)
+
+#2019 1월 비교 달성 현황 **CHANGE**
+c <- round(month_2020$sales / month_2019$sales*100,1)
+
+
+```
+
+
+### **■ 2020 매출 달성 현황**
+> <span style = "color:#ff6161">**1월 BASE 달성율 : 97% </span> / <span style = "color:#4754ff">2019 1월 매출 달성율 : 101%**</span>
+
+
+```{r}
+#1월 목표달성 바그래프
+
+month_chart <- month_2020 %>% 
+  hchart(name = "BASE 1월 목표매출", type = "bar", 
+         hcaes(x = month, y = total_base), color = "#39db59") %>%
+  hc_title(text = "<b>1월 달성현황</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_add_series(name = "현재까지 1월 매출", type = "bar", data = month_2020$sales, color = "#ff6363") %>% 
+  hc_tooltip(crosshairs = TRUE,backgroundColor = "#FCFFC5", shared = TRUE) %>% 
+  hc_yAxis(title = list(text = "")) %>% 
+  hc_xAxis(title = list(text = "")) %>% 
+  hc_add_theme(hc_theme_google())
+month_chart <- hc_size(month_chart, width = 770, height = 200)
+month_chart
+
+```
+
+</br>
+
+```{r}
+#월별 2020년 현황
+
+month_sales <- highchart() %>% 
+  hc_title(text = "<b>2020 월 별 매출 현황</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = this_year$month) %>% 
+  hc_yAxis(title = list(text = "매출(M : 1억)")) %>% 
+  hc_add_series(name = "영화 매출", type = "column", data = this_year$movie_sales, color = "#ffe3e8") %>% 
+  hc_add_series(name = "방송 매출", type = "column", data = this_year$broad_sales, color = "#e3e4ff") %>%
+  hc_plotOptions(column = list(stacking = "normal")) %>% 
+  hc_add_series(type = "line", name = "BASE 목표 매출", data = this_year$total_base, color = "#39db59") %>% 
+  hc_add_series(type = "line", name = "2019SALES", data = last_year$sales, color = "#adadad") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+month_sales
+
+```
+
+</br>
+</br>
+
+### **■ 주간 상세 지표**
+
+</br>
+
+```{r}
+
+#요약 OVERVIEW 생성
+
+CATEGORY <- c("PU", "SALES", "ARPPU")
+지난주차 <- c(last_week$amount_pu, last_week$sales, last_week$arppu)
+이번주차 <- c(this_week$amount_pu, this_week$sales, this_week$arppu)
+증감 <- c(this_week$amount_pu - last_week$amount_pu, this_week$sales - last_week$sales,
+        this_week$arppu - last_week$arppu)
+summary <- data.table(CATEGORY, 지난주차, 이번주차, 증감)
+
+summary$지난주차 <- formatC(summary$지난주차, format = "d", big.mark = ",")
+summary$이번주차 <- formatC(summary$이번주차, format = "d", big.mark = ",")
+summary$증감 <- formatC(summary$증감, format = "d", big.mark = ",")
+
+```
+
+```{r}
+formattable(summary,  align = c("c", rep("r", NCOL(summary) - 1)),
+            list(
+              `CATEGORY` = formatter("span", style = ~ style(color = "grey",font.weight = "bold")), 
+              `지난주차` = formatter("span", style = ~ style(color = "grey",font.weight = "bold")),
+              `이번주차` = formatter("span", style = ~ style(color = "grey",font.weight = "bold")),
+              `증감`= formatter("span", style = ~ style(color = ifelse(`증감` < 0, "red", "green")),
+                    ~ icontext(ifelse(`증감` > 0,"arrow-up", "arrow-down"), `증감`))))
+            
+```
+
+
+</br>
+</br>
+
+### **- 매출 상세**
+
+```{r}
+#요일별 매출 비교
+day_sales <- hcboxplot(name = "2019 요일 매출 취합", x = original_2019$sales, 
+                    var = original_2019$dailyreport_day, outliers = FALSE, color = "#ffbdbd") %>%
+  hc_title(text = "<b>요일별 매출 비교</b>", margin = 20, align = "left", 
+           style = list(color = "#ff3b4c")) %>%
+  hc_subtitle(text = "<b>[붉은선] 이번주, [회색선]지난주</b>",
+              align = "left",
+              style = list(color = "#cccccc", fontWeight = "bold")) %>% 
+  hc_yAxis(title = list(text = "매출(M : 백만)")) %>% 
+  hc_chart(type = "column") %>% 
+  hc_add_series(name = 이번주, type = "line", data = this_daily$sales, color = "#ff3b4c") %>% 
+  hc_add_series(name = 저번주, type = "line", data = last_daily$sales, color = "#ababab") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_legend(align = "left", verticalAlign = "top",
+            layout = "vertical", x = 0, y = 100) %>% 
+  hc_tooltip(crosshairs = TRUE, backgroundColor = "#FCFFC5", shared = TRUE)
+  
+day_sales
+```
+
+</br>
+
+```{r}
+#전체 플랫폼 매출/ 비중 비교
+
+week_mb_sales_column <- highchart() %>% 
+  hc_title(text = "<b>전체 플랫폼 별 매출</b>", margin = 20, align = "left", 
+           style = list(color = "#ff3b4c")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "매출(M : 1억)")) %>% 
+  hc_add_series(name = "PC", type = "column", data = original_week_2020$mb_pc, color = "#526acc") %>% 
+  hc_add_series(name = "MoWEB",type = "column", data = original_week_2020$mb_mw, color = "#ff6666") %>% 
+  hc_add_series(name = "AOS",type = "column", data = original_week_2020$mb_aos, color = "#ffafa1") %>% 
+  hc_add_series(name = "IOS", type = "column", data = original_week_2020$mb_ios, color = "#ffbfd1") %>% 
+  hc_plotOptions(column = list(stacking = "normal")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+week_mb_sales_column
+
+
+```
+
+</br>
+
+```{r}
+#영화 /방송 매출 비교
+per_chart <- highchart() %>% 
+  hc_title(text = "<b>영화/방송 매출 비교</b>", margin = 20, align = "left", 
+           style = list(color = "#ff3b4c")) %>%
+  hc_xAxis(categories = mean$day_mean) %>% 
+  hc_yAxis(title = list(text = "매출(M : 1억)")) %>% 
+  hc_add_series(name = 영화, type = "column", data = this_daily$movie_sales, color = "#ff3b4c") %>% 
+  hc_add_series(name = 방송, type = "column", data = this_daily$broad_sales, color = "#5358b5") %>% 
+  hc_tooltip(crosshairs = TRUE, backgroundColor = "#FCFFC5", shared = TRUE) %>% 
+  hc_add_theme(hc_theme_google())
+per_chart
+```
+
+</br>
+</br>
+
+### **- PU 상세**
+
+```{r}
+#요일별 PU비교
+
+day_pu <- hcboxplot(name = "2019 요일 PU 취합", x = original_2019$amount_pu,
+                    var = original_2019$dailyreport_day, outliers = FALSE, color = "#aed6c5") %>% 
+  hc_title(text = "<b>요일별 PU 비교</b>", margin = 20, align = "left", 
+           style = list(color = "#1cbd7d")) %>%
+  hc_subtitle(text = "<b>[초록선] 이번주, [회색선]지난주</b>",
+              align = "left",
+              style = list(color = "#cccccc", fontWeight = "bold")) %>% 
+  hc_yAxis(title = list(text = "인원(K : 1000)")) %>% 
+  hc_chart(type = "column") %>% 
+  #**CHANGE
+  hc_add_series(name = 이번주, type = "line", data = this_daily$amount_pu, color = "#1cbd7d") %>% 
+  hc_add_series(name = 저번주, type = "line", data = last_daily$amount_pu, color = "#ababab") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_legend(align = "left", verticalAlign = "top",
+            layout = "vertical", x = 0, y = 100) %>% 
+  hc_tooltip(crosshairs = TRUE, backgroundColor = "#FCFFC5", shared = TRUE)
+day_pu
+
+```
+
+</br>
+
+```{r}
+#전체 플랫폼 별 이용 건수
+week_mb_cnt_column <- highchart() %>% 
+  hc_title(text = "<b>전체 플랫폼 별 이용건수</b>", margin = 20, align = "left", 
+           style = list(color = "#1cbd7d")) %>%
+  hc_xAxis(categories = original_week_2019$week) %>% 
+  hc_yAxis(title = list(text = "카운트(k: 1000)")) %>% 
+  hc_add_series(name = "PC", type = "column", data = original_week_2020$mb_pc_cnt, color = "#526acc") %>% 
+  hc_add_series(name = "MoWEB",type = "column", data = original_week_2020$mb_mw_cnt, color = "#ff6666") %>% 
+  hc_add_series(name = "AOS",type = "column", data = original_week_2020$mb_aos_cnt, color = "#ffafa1") %>% 
+  hc_add_series(name = "IOS", type = "column", data = original_week_2020$mb_ios_cnt, color = "#ffbfd1") %>% 
+  hc_plotOptions(column = list(stacking = "normal")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+week_mb_cnt_column
+```
+
+</br>
+</br>
+
+
+### **- 영화 상세**
+> <span style = "color:#ff6161">**1월 BASE 영화 달성율 : 93.5% </span> / <span style = "color:#4754ff">2019 1월 영화 매출 달성율 : 97.5%**</span>
+
+```{r}
+#2020 1월 달성 현황 **CHANGE**
+d <- round(month_2020$movie_sales / month_2020$base_movie*100,1)
+
+#2019 1월 비교 달성 현황 **CHANGE**
+e <- round(month_2020$movie_sales / month_2019$movie_sales*100,1)
+
+```
+
+
+```{r}
+#1월 목표달성 바그래프
+
+
+month_m_chart <- month_2020 %>% 
+  hchart(name = "BASE 1월 목표매출", type = "bar", 
+         hcaes(x = month, y = base_movie), color = "#39db59") %>%
+  hc_title(text = "<b>1월 달성현황</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_add_series(name = "현재까지 1월 매출", type = "bar", data = month_2020$movie_sales, color = "#ff6363") %>% 
+  hc_tooltip(crosshairs = TRUE,backgroundColor = "#FCFFC5", shared = TRUE) %>% 
+  hc_yAxis(title = list(text = "")) %>% 
+  hc_xAxis(title = list(text = "")) %>% 
+  hc_add_theme(hc_theme_google())
+month_m_chart <- hc_size(month_m_chart, width = 770, height = 200)
+month_m_chart
+```
+
+</br>
+
+```{r}
+#일별 영화 매출
+movie_chart <- highchart() %>% 
+  hc_title(text = "<b>일별 영화 매출</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = mean$day_mean) %>% 
+  hc_yAxis(title = list(text = "매출(M : 1억)")) %>% 
+  hc_add_series(name = "2019 영화 평균", type = "column", data = mean$movie_mean, color = "#ffe3e8") %>% 
+  hc_add_series(name = 이번주, type = "line", data = this_daily$movie_sales, color = "#ff3b4c") %>% 
+  hc_add_series(name = 저번주, type = "line", data = last_daily$movie_sales, color = "#ababab") %>% 
+  hc_tooltip(crosshairs = TRUE, backgroundColor = "#FCFFC5", shared = TRUE) %>%
+  hc_add_theme(hc_theme_google())
+
+movie_chart
+```
+
+</br>
+
+```{r}
+
+#영화 플랫폼 별 매출
+week_m_sales_column <- highchart() %>%
+  hc_title(text = "<b>영화 플랫폼 별 매출</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "매출(M : 1억)")) %>% 
+  hc_add_series(name = "PC", type = "column", data = original_week_2020$movie_pc_sales, color = "#526acc") %>% 
+  hc_add_series(name = "MoWEB",type = "column", data = original_week_2020$movie_m_sales, color = "#ff6666") %>% 
+  hc_add_series(name = "AOS",type = "column", data = original_week_2020$movie_aos_sales, color = "#ffafa1") %>% 
+  hc_add_series(name = "IOS", type = "column", data = original_week_2020$movie_ios_sales, color = "#ffbfd1") %>% 
+  hc_plotOptions(column = list(stacking = "normal")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+week_m_sales_per <- highchart() %>%
+  hc_title(text = "<b>영화 플랫폼 별 비중</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "퍼센트(%)")) %>% 
+  hc_add_series(name = "PC", type = "area", data = original_week_2020$movie_pc_sales, color = "#526acc") %>% 
+  hc_add_series(name = "MoWEB",type = "area", data = original_week_2020$movie_m_sales, color = "#ff6666") %>% 
+  hc_add_series(name = "AOS", type = "area", data = original_week_2020$movie_aos_sales, color = "#ffafa1") %>% 
+  hc_add_series(name = "IOS",type = "area", data = original_week_2020$movie_ios_sales, color = "#ffbfd1") %>% 
+  hc_plotOptions(area = list(stacking = "percent")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+week_m_sales <- hw_grid(week_m_sales_column, week_m_sales_per)
+week_m_sales
+
+
+```
+
+</br>
+
+```{r}
+
+#영화 PU 현황 / 비중 비교
+week_m_pu_column <- highchart() %>%
+  hc_title(text = "<b>영화 PU 현황</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "카운트(k : 1,000)")) %>% 
+  hc_add_series(name = "영화 신규 유료", type = "column", data = week_pu_2020$영화_신규유료) %>% 
+  hc_add_series(name = "영화 신규 무료",type = "column", data = week_pu_2020$영화_신규무료) %>%
+  hc_add_series(name = "영화 재구매 유료",type = "column", data = week_pu_2020$영화_재구매유료) %>%
+  hc_add_series(name = "영화 재구매 무료",type = "column", data = week_pu_2020$영화_재구매무료) %>%
+  hc_plotOptions(column = list(stacking = "normal")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+week_m_pu_per <- highchart() %>%
+  hc_title(text = "<b>영화 PU 비중</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "퍼센트(%)")) %>% 
+  hc_add_series(name = "영화 신규 유료", type = "area", data = week_pu_2020$영화_신규유료) %>% 
+  hc_add_series(name = "영화 신규 무료",type = "area", data = week_pu_2020$영화_신규무료) %>%
+  hc_add_series(name = "영화 재구매 유료",type = "area", data = week_pu_2020$영화_재구매유료) %>%
+  hc_add_series(name = "영화 재구매 무료",type = "area", data = week_pu_2020$영화_재구매무료) %>%
+  hc_plotOptions(area = list(stacking = "percent")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+
+week_m_pu <- hw_grid(week_m_pu_column, week_m_pu_per)
+week_m_pu
+
+```
+
+</br>
+
+```{r}
+#주간 영화 작품 판매량
+mcon_wc <- highchart() %>% 
+  hc_title(text = "<b>주간 영화 작품 판매 매출</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = mcon_w$컨텐츠) %>% 
+  hc_add_series(name = "주간 영화 작품", type = "bar", data = mcon_w$실매출액, 
+                dataLabels = list(enabled = TRUE), color = "#ffe3e8") %>% 
+  hc_tooltip(crosshairs = TRUE, backgroundColor = "#FCFFC5", shared = TRUE) %>%
+  hc_add_theme(hc_theme_google())
+mcon_wc
+```
+
+</br>
+</br>
+
+### **- 방송 상세**
+> <span style = "color:#ff6161">**1월 BASE 방송 달성율 : 101.2% </span> / <span style = "color:#4754ff">2019 1월 방송 매출 달성율 : 105.3%**</span>
+
+```{r}
+#2020 1월 달성 현황 **CHANGE**
+f <- round(month_2020$broad_sales / month_2020$base_broad*100,1)
+
+#2019 1월 비교 달성 현황 **CHANGE**
+g <- round(month_2020$broad_sales / month_2019$broad_sales*100,1)
+
+```
+
+
+```{r}
+
+#1월 목표달성 바그래프
+
+month_b_chart <- month_2020 %>% 
+  hchart(name = "BASE 1월 목표매출", type = "bar", 
+         hcaes(x = month, y = base_broad), color = "#39db59") %>%
+  hc_title(text = "<b>1월 달성현황</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_add_series(name = "현재까지 1월 매출", type = "bar", data = month_2020$broad_sales, color = "#ff6363") %>% 
+  hc_tooltip(crosshairs = TRUE,backgroundColor = "#FCFFC5", shared = TRUE) %>% 
+  hc_yAxis(title = list(text = "")) %>% 
+  hc_xAxis(title = list(text = "")) %>% 
+  hc_add_theme(hc_theme_google())
+month_b_chart <- hc_size(month_b_chart, width = 770, height = 200)
+month_b_chart
+
+```
+
+</br>
+
+```{r}
+broad_chart <- highchart() %>% 
+  hc_title(text = "<b>일별 방송 매출</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = mean$day_mean) %>% 
+  hc_yAxis(title = list(text = "매출(M : 1억)")) %>% 
+  hc_add_series(name = "2019 방송 평균", type = "column", data = mean$broad_mean, color = "#e3e4ff") %>% 
+  hc_add_series(name = 이번주, type = "line", data = this_daily$broad_sales, color = "#5358b5") %>% 
+  hc_add_series(name = 저번주, type = "line", data = last_daily$broad_sales, color = "#ababab") %>% 
+  hc_tooltip(crosshairs = TRUE, backgroundColor = "#FCFFC5", shared = TRUE) %>% 
+  hc_add_theme(hc_theme_google())
+
+broad_chart
+```
+
+</br>
+
+```{r}
+#방송 플랫폼 별 매출 
+
+week_b_sales_column <- highchart() %>%
+  hc_title(text = "<b>방송 플랫폼 별 매출</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "매출(M : 1억)")) %>% 
+  hc_add_series(name = "PC", type = "column", data = original_week_2020$broad_pc_sales, color = "#526acc") %>% 
+  hc_add_series(name = "MoWEB", type = "column", data = original_week_2020$broad_m_sales, color = "#ff6666") %>% 
+  hc_add_series(name = "AOS", type = "column", data = original_week_2020$broad_aos_sales, color = "#ffafa1") %>% 
+  hc_add_series(name = "IOS",type = "column", data = original_week_2020$broad_ios_sales, color = "#ffbfd1") %>% 
+  hc_plotOptions(column = list(stacking = "normal")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+week_b_sales_per <- highchart() %>%
+  hc_title(text = "<b>방송 플랫폼 별 비중</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "퍼센트(%)")) %>% 
+  hc_add_series(name = "PC", type = "area", data = original_week_2020$broad_pc_sales, color = "#526acc") %>% 
+  hc_add_series(name = "MoWEB",type = "area", data = original_week_2020$broad_m_sales, color = "#ff6666") %>% 
+  hc_add_series(name = "AOS", type = "area", data = original_week_2020$broad_aos_sales, color = "#ffafa1") %>% 
+  hc_add_series(name = "IOS",type = "area", data = original_week_2020$broad_ios_sales, color = "#ffbfd1") %>% 
+  hc_plotOptions(area = list(stacking = "percent")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+week_b_sales <- hw_grid(week_b_sales_column, week_b_sales_per)
+week_b_sales
+```
+
+</br>
+
+```{r}
+
+week_b_pu_column <- highchart() %>%
+  hc_title(text = "<b>방송 PU 현황</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "카운트(k : 1,000)")) %>% 
+  hc_add_series(name = "방송 신규 유료", type = "column", data = week_pu_2020$방송_신규유료) %>% 
+  hc_add_series(name = "방송 신규 무료",type = "column", data = week_pu_2020$방송_신규무료) %>%
+  hc_add_series(name = "방송 재구매 유료",type = "column", data = week_pu_2020$방송_재구매유료) %>%
+  hc_add_series(name = "방송 재구매 무료",type = "column", data = week_pu_2020$방송_재구매무료) %>%
+  hc_plotOptions(column = list(stacking = "normal")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+week_b_pu_per <- highchart() %>%
+  hc_title(text = "<b>방송 PU 비중</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = original_week_2020$week) %>% 
+  hc_yAxis(title = list(text = "퍼센트(%)")) %>% 
+  hc_add_series(name = "방송 신규 유료", type = "area", data = week_pu_2020$방송_신규유료) %>% 
+  hc_add_series(name = "방송 신규 무료",type = "area", data = week_pu_2020$방송_신규무료) %>%
+  hc_add_series(name = "방송 재구매 유료",type = "area", data = week_pu_2020$방송_재구매유료) %>%
+  hc_add_series(name = "방송 재구매 무료",type = "area", data = week_pu_2020$방송_재구매무료) %>%
+  hc_plotOptions(area = list(stacking = "percent")) %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE,backgroundColor = "#FCFFC5")
+
+week_b_pu <- hw_grid(week_b_pu_column, week_b_pu_per)
+week_b_pu
+```
+
+</br>
+
+```{r}
+#주간 방송 작품 판매량
+
+bcon_wc <- highchart() %>% 
+  hc_title(text = "<b>주간 방송 작품 판매 매출</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = bcon_w$컨텐츠) %>% 
+  hc_add_series(name = "주간 방송 작품", type = "bar", data = bcon_w$실매출액, 
+                dataLabels = list(enabled = TRUE), color = "#e3e4ff") %>% 
+  hc_tooltip(crosshairs = TRUE, backgroundColor = "#FCFFC5", shared = TRUE) %>%
+  hc_add_theme(hc_theme_google())
+bcon_wc
+```
+
+</br>
+</br>
+
+### <b>- NDS/NDS APP</b>
+
+```{r}
+#PC웹 PV / UB
+pcw_d_c <- highchart() %>% 
+  hc_title(text = "<b>PC 웹 PV/UB</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = pcw_daily_this$date) %>% 
+  hc_yAxis(title = list(text = "COUNT(k : 1,000)")) %>% 
+  hc_add_series(name = "PV", type = "column", data = pcw_daily_this$PV, color = "#4efc7d",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "UB", type = "column", data = pcw_daily_this$UB, color = "#f54c54",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "PV평균", dashStyle = "longdash", data = pcw_daily_this$mean_PV, color = "#9ef7b6") %>% 
+  hc_add_series(name = "UB평균", dashStyle = "longdash", data = pcw_daily_this$mean_UB, color = "#ff969b") %>% 
+  hc_add_theme(hc_theme_google())
+pcw_d_c
+```
+
+</br>
+
+```{r}
+#MW PV/ UB
+mw_d_c <- highchart() %>% 
+  hc_title(text = "<b>모바일 웹 PV/UB</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_xAxis(categories = mw_daily_this$date) %>% 
+  hc_yAxis(title = list(text = "COUNT(k : 1,000)")) %>% 
+  hc_add_series(name = "PV", type = "column", data = mw_daily_this$PV, color = "#4efc7d",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "UB", type = "column", data = mw_daily_this$UB, color = "#f54c54",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "PV평균", dashStyle = "longdash", data = mw_daily_this$mean_PV, color = "#9ef7b6") %>% 
+  hc_add_series(name = "UB평균", dashStyle = "longdash", data = mw_daily_this$mean_UB, color = "#ff969b") %>% 
+  hc_add_theme(hc_theme_google())
+mw_d_c
+
+```
+
+</br>
+
+```{r}
+#IOS 신규 / 전체
+
+ios_d_c <- highchart() %>% 
+  hc_title(text = "<b> IOS 신규/전체 </b>", margin = 20, align = "left",
+           style = list(color = "#00156b")) %>% 
+  hc_xAxis(categories = ios_daily_this$date) %>% 
+  hc_yAxis(title = list(text = "COUNT(k : 1,000)")) %>% 
+  hc_add_series(name = "신규유저", type = "column", data = ios_daily_this$신규, color = "#4efc7d",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "전체유저", type = "column", data = ios_daily_this$전체, color = "#f54c54",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "신규 평균", dashStyle = "longdash", data = ios_daily_this$mean_new, color = "#9ef7b6") %>% 
+  hc_add_series(name = "전체 평균", dashStyle = "longdash", data = ios_daily_this$mean_all, color = "#ff969b") %>% 
+  hc_add_theme(hc_theme_google())
+ios_d_c
+
+```
+
+</br>
+
+```{r}
+#ios demo
+ios_demo_c <- highchart() %>%
+  hc_title(text = "<b>IOS DEMOGRAPHY</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_chart(type = 'bar') %>% 
+  hc_xAxis(
+    list(categories = ios_demo_x, reversed = FALSE, labels = list(step=1)),
+    list(categories = ios_demo_x, opposite = TRUE, reversed = FALSE, linkedTo = 0, labels = list(step=1))) %>% 
+   hc_tooltip(
+    shared = FALSE,
+    formatter = JS("function () {
+                   return this.point.category + '<br/>' +
+                   '<b>' + this.series.name + '</b> ' +
+                   Highcharts.numberFormat(Math.abs(this.point.y), 1);}"))%>%
+  hc_yAxis(title= list(text= NULL),
+           labels=list(formatter=JS("function () {
+               return Math.abs(this.value) + '%';
+             }")))%>%
+
+  hc_plotOptions(series=list(stacking= 'normal'))%>%
+
+  hc_series(
+    list(name= 'Male',
+         data= -ios_demo_2$퍼센트, color = "#7279fc"),
+
+    list(name= 'Female',
+         data= ios_demo_1$퍼센트, color = "#ffa1a1")) %>%
+  hc_add_theme(hc_theme_google())
+
+
+ios_demo_c
+  
+```
+
+</br>
+
+```{r}
+#AOS 신규/ 전체
+aos_d_c <- highchart() %>% 
+  hc_title(text = "<b> AOS 신규/전체 </b>", margin = 20, align = "left",
+           style = list(color = "#00156b")) %>% 
+  hc_xAxis(categories = aos_daily_this$date) %>% 
+  hc_yAxis(title = list(text = "COUNT(k : 1,000)")) %>% 
+  hc_add_series(name = "신규유저", type = "column", data = aos_daily_this$신규, color = "#4efc7d",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "전체유저", type = "column", data = aos_daily_this$전체, color = "#f54c54",
+                dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "신규 평균", dashStyle = "longdash", data = aos_daily_this$mean_new, color = "#9ef7b6") %>% 
+  hc_add_series(name = "전체 평균", dashStyle = "longdash", data = aos_daily_this$mean_all, color = "#ff969b") %>% 
+  hc_add_theme(hc_theme_google())
+aos_d_c
+
+```
+
+</br>
+
+```{r}
+#aos demo
+aos_demo_c <- highchart() %>%
+  hc_title(text = "<b>AOS DEMOGRAPHY</b>", margin = 20, align = "left", 
+           style = list(color = "#00156b")) %>%
+  hc_chart(type = 'bar') %>% 
+  hc_xAxis(
+    list(categories = aos_demo_x, reversed = FALSE, labels = list(step=1)),
+    list(categories = aos_demo_x, opposite = TRUE, reversed = FALSE, linkedTo = 0, labels = list(step=1))) %>% 
+   hc_tooltip(
+    shared = FALSE,
+    formatter = JS("function () {
+                   return this.point.category + '<br/>' +
+                   '<b>' + this.series.name + '</b> ' +
+                   Highcharts.numberFormat(Math.abs(this.point.y), 1);}"))%>%
+  hc_yAxis(title= list(text= NULL),
+           labels=list(formatter=JS("function () {
+               return Math.abs(this.value) + '%';
+             }")))%>%
+
+  hc_plotOptions(series=list(stacking= 'normal'))%>%
+
+  hc_series(
+    list(name= 'Male',
+         data= -aos_demo_2$퍼센트, color = "#7279fc"),
+
+    list(name= 'Female',
+         data= aos_demo_1$퍼센트, color = "#ffa1a1")) %>% 
+  hc_add_theme(hc_theme_google())
+
+aos_demo_c
+  
+```
+</br>
+</br>
+
+### **■ 경쟁사 지표 분석**
+
+* <b>경쟁사 지표 데이터는 APP ANNIE 데이터를 참고하고 있습니다.</b>
+</br>
+* <b>집계 기준이 내부와 다르며, APP(AOS/IOS통합)에 대한 지표 데이터인 점 참고 부탁드립니다.</b>
+</br>
+* <b>그래프 색상은 경쟁사 앱 아이콘 색상으로 구분되었다고 생각하시면 좀 더 보기 편합니다. </b>
+</br>
+
+
+<br/>
+<br/>
+
+> <b> 다운로드 (1월) </b>
+
+```{r}
+
+down_c <- highchart() %>% 
+  hc_xAxis(categories = down_202001$date) %>% 
+  hc_yAxis(title = list(text = "COUNT(k : 1,000)")) %>% 
+  hc_add_series(name = "시리즈온", type = "line", data = down_202001$`SERIES ON`, 
+                dataLabels = list(enabled = TRUE), color = "#00ff44") %>% 
+  hc_add_series(name = "티빙", type = "line", data = down_202001$tving, color = "#e83f4e") %>% 
+  hc_add_series(name = "왓챠", type = "line", data = down_202001$`Watcha Play`, color = "#4d4d4d") %>% 
+  hc_add_series(name = "웨이브", type = "line", data = down_202001$wavve, color = "#0066b0") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE)
+
+down_c
+```
+
+
+> <b> 다운로드 (2019년 월별) </b>
+
+```{r}
+
+down_2019_c <- highchart() %>% 
+  hc_xAxis(title = list(text = "MONTH"), categories = down_2019_son$month) %>% 
+  hc_yAxis(title = list(text = "COUNT(k : 1,000)")) %>% 
+  hc_add_series(name = "시리즈온", type = "line", data = down_2019_son$Downloads, 
+                color = "#00ff44", dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "티빙", type = "line", data = down_2019_tv$Downloads, color = "#e83f4e") %>% 
+  hc_add_series(name = "왓챠", type = "line", data = down_2019_wat$Downloads, color = "#4d4d4d") %>% 
+  hc_add_series(name = "웨이브", type = "line", data = down_2019_wav$Downloads, color = "#0066b0") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE)
+
+down_2019_c
+```
+
+> <b> 다운로드 (2019년 합산) </b>
+
+```{r}
+
+down_2019_all_c <- highchart() %>% 
+  hc_xAxis(categories = down_2019$name) %>% 
+  hc_yAxis(title = list(text = "COUNT(k : 1,000)")) %>% 
+  hc_add_series(name = "시리즈온", type = "column", data = down_2019_allson$sum, 
+                dataLabels = list(enabled = TRUE), color = "#00ff44") %>% 
+  hc_add_series(name = "티빙", type = "column", data = down_2019_alltv$sum, 
+                dataLabels = list(enabled = TRUE), color = "#e83f4e") %>% 
+  hc_add_series(name = "왓챠", type = "column", data = down_2019_allwat$sum, 
+                dataLabels = list(enabled = TRUE), color = "#4d4d4d") %>% 
+  hc_add_series(name = "웨이브", type = "column", data = down_2019_allwav$sum, 
+                dataLabels = list(enabled = TRUE), color = "#0066b0") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE)
+
+down_2019_all_c
+
+```
+
+
+> <b> 평균 오픈율 (2019년 월별) </b>
+
+```{r}
+
+open_2019_c <- highchart() %>% 
+  hc_xAxis(title = list(text = "MONTH"), categories = open_2019_son$month) %>% 
+  hc_yAxis(title = list(text = "퍼센트 (%)")) %>% 
+  hc_add_series(name = "시리즈온", type = "line", data = open_2019_son$open, 
+                color = "#00ff44", dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "티빙", type = "line", data = open_2019_tv$open, color = "#e83f4e") %>% 
+  hc_add_series(name = "왓챠", type = "line", data = open_2019_wat$open, color = "#4d4d4d") %>% 
+  hc_add_series(name = "웨이브", type = "line", data = open_2019_wav$open, color = "#0066b0") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE)
+open_2019_c
+
+```
+
+
+* <b> OPEN RATE = 특정 기간 동안 앱을 연 설치 기반의 비율 </b>
+
+* <b> OPEN RATE의 경우 APP ANNIE 데이터 갱신 시점이 약 2~3주 이상 경과되어야 확인 가능 </b>
+
+* <b> wavve 데이터의 경우 pooq의 데이터와 같이 남고 있어서 합산 계산
+
+* <b> 일부 유실 된 데이터가 있음
+
+</br>
+</br>
+
+> <b> Active User (2019년 월별) </b>
+
+```{r}
+
+active_2019_c <- highchart() %>% 
+  hc_xAxis(title = list(text = "MONTH"), categories = active_2019_son$month) %>% 
+  hc_yAxis(title = list(text = "COUNT(K : 1,000)")) %>% 
+  hc_add_series(name = "시리즈온", type = "line", data = active_2019_son$active, 
+                color = "#00ff44", dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "티빙", type = "line", data = active_2019_tv$active, color = "#e83f4e") %>% 
+  hc_add_series(name = "왓챠", type = "line", data = active_2019_wat$active, color = "#4d4d4d") %>% 
+  hc_add_series(name = "웨이브", type = "line", data = active_2019_wav$active, color = "#0066b0") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE)
+active_2019_c
+
+```
+
+* <b> Active User = 특정 기간 동안 평균 순 사용자 수 </b>
+
+* <b> Active User의 경우 APP ANNIE 데이터 갱신 시점이 약 1달정도 경과되어야 확인 가능 </b>
+
+* <b> 일부 유실된 데이터가 있음
+
+</br>
+</br>
+
+> <b> 기기 설치율 (2019년 월별) </b>
+
+```{r}
+
+install_2019_c <- highchart() %>% 
+  hc_xAxis(title = list(text = "MONTH"), categories = install_2019_son$month) %>% 
+  hc_yAxis(title = list(text = "퍼센트(%)")) %>% 
+  hc_add_series(name = "시리즈온", type = "line", data = install_2019_son$install, 
+                color = "#00ff44", dataLabels = list(enabled = TRUE)) %>% 
+  hc_add_series(name = "티빙", type = "line", data = install_2019_tv$install, color = "#e83f4e") %>% 
+  hc_add_series(name = "왓챠", type = "line", data = install_2019_wat$install, color = "#4d4d4d") %>% 
+  hc_add_series(name = "웨이브", type = "line", data = install_2019_wav$install, color = "#0066b0") %>% 
+  hc_add_theme(hc_theme_google()) %>% 
+  hc_tooltip(crosshairs = TRUE, shared = TRUE)
+install_2019_c
+
+```
+
+* <b> Install Penetration  = 앱이 현재 존재하는 기기의 비율 </b>
+
+* <b> Install Penetration의 경우 APP ANNIE 데이터 갱신 시점이 약 2주 경과되어야 확인 가능 </b>
+
+* <b> 일부 유실된 데이터가 있음
